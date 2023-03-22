@@ -1,0 +1,182 @@
+
+
+
+1.Find all the topics and tasks which are thought in the month of October?
+
+                  db.tasks([
+                  {
+                    $lookup: {
+                      from: "topics",
+                      localField: "topic_id",
+                      foreignField: "_id",
+                      as: "topic"
+                    }
+                  },
+                  {
+                    $match: {
+                      deadline: {
+                        $gte: ISODate("2020-10-01T00:00:00.000Z"),
+                        $lte: ISODate("2020-10-31T23:59:59.999Z")
+                      }
+                    }
+                  },
+                  {
+                    $project: {
+                      "topic.name": 1,
+                      description: 1,
+                      _id: 0
+                    }
+                  }
+                ])
+
+
+2.Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+
+
+           
+                db.company_drives(
+                  {
+                    $match: {
+                      date: {
+                        $gte: ISODate("2020-10-15T00:00:00.000Z"),
+                        $lte: ISODate("2020-10-31T23:59:59.999Z")
+                      }
+                    }
+                  })
+                 
+
+3.Find all the company drives and students who are appeared for the placement.
+
+
+
+
+
+                       db.attendance([
+                      {
+                        $lookup: {
+                          from: "company_drives",
+                          localField: "company_drive_id",
+                          foreignField: "_id",
+                          as: "company_drive"
+                        }
+                      },
+                      {
+                        $match: {
+                          status: "appeared"
+                        }
+                      },
+                      {
+                        $project: {
+                          "company_drive.name": 1,
+                          user_id: 1,
+                          _id: 0
+                        }
+                      }
+                    ])
+
+
+
+
+
+4.Find the number of problems solved by the user in codekata
+
+
+
+                            db.codekata([
+                              {
+                                $match: {
+                                  user_id: "12345",
+                                  status: "solved"
+                                }
+                              },
+                              {
+                                $group: {
+                                  _id: "$user_id",
+                                  total_problems_solved: { $sum: 1 }
+                                }
+                              }
+                            ])
+
+
+5.Find all the mentors with who has the mentee's count more than 15
+
+
+
+                            db.users([
+                              {
+                                $match: {
+                                  role: "mentor"
+                                }
+                              },
+                              {
+                                $lookup: {
+                                  from: "users",
+                                  localField: "mentee_ids",
+                                  foreignField: "_id",
+                                  as: "mentees"
+                                }
+                              },
+                              {
+                                $project: {
+                                  name: 1,
+                                  mentee_count: { $size: "$mentees" },
+                                  _id: 0
+                                }
+                              },
+                              {
+                                $match: {
+                                  mentee_count: { $gt: 15 }
+                                }
+                              }
+                            ])
+
+
+
+6.Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+
+
+                        db.attendance([
+                          {
+                            $match: {
+                              date: {
+                                $gte: ISODate("2020-10-15T00:00:00Z"),
+                                $lte: ISODate("2020-10-31T23:59:59Z")
+                              },
+                              status: "absent"
+                            }
+                          },
+                          {
+                            $lookup: {
+                              from: "tasks",
+                              localField: "user_id",
+                              foreignField: "user_id",
+                              as: "tasks"
+                            }
+                          },
+                          {
+                            $match: {
+                              "tasks.date": {
+                                $gte: ISODate("2020-10-15T00:00:00Z"),
+                                $lte: ISODate("2020-10-31T23:59:59Z")
+                              },
+                              "tasks.status": "not submitted"
+                            }
+                          },
+                          {
+                            $group: {
+                              _id: "$user_id",
+                              count: { $sum: 1 }
+                            }
+                          }
+                        ])
+
+
+
+
+
+
+
+
+
+
+
